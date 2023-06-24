@@ -1,0 +1,77 @@
+# -------------->importing libraries<-------------
+
+from pandas import read_csv
+import nltk
+import re  #re=regular expression used for searching words in a text or a paragraph
+from nltk.corpus import stopwords  #which does not add value to the sentence for ex are is what etc,hence we need to remove them
+from nltk.stem.porter import PorterStemmer
+from sklearn.feature_extraction.text import TfidfVectorizer  #used to convert the words into features
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+
+# ------------>downloading stopwords from the nltk library<---------------
+
+# nltk.download("stopwords")
+# print(stopwords.words("english"))
+
+
+# ----------------->data pre-processing<---------------
+
+
+df=read_csv(r"C:\Users\ayush\OneDrive\Desktop\ml projects\train.csv")
+
+# count missing values
+# print(df.isnull().sum())
+
+# filling missing values with " "-->null string 
+df=df.fillna("")
+
+# now combining title and author column but i could also use only text to get the results but in order to get better accuracy i am using all 3 of them
+df["content"]=df["title"]+' '+df["author"]
+
+# now seprating the datas into x and y
+
+# x=df.drop(["label"],axis=1) #1 means column
+# y=df["label"]
+
+
+# -----------------------> STEMMING <-----------------------
+
+
+# stemming means reducing the word to its root word for ex= actor,actress,acting==act(root word)
+port_stem=PorterStemmer()
+def stemming(content):
+    stemmed_content = re.sub('[^a-zA-Z]',' ',content)
+    stemmed_content = stemmed_content.lower()
+    stemmed_content = stemmed_content.split()
+    stemmed_content = [port_stem.stem(word) for word in stemmed_content if not word in stopwords.words('english')]
+    stemmed_content = ' '.join(stemmed_content)
+    return stemmed_content
+
+df['content'] = df['content'].apply(stemming)
+# print(df["content"])
+
+# -------------> creating new x and y <-------------------
+
+x=df['content'].values
+y=df["label"].values
+
+
+# -----------> Getting x in vector form or numbered form <-------------
+
+vector=TfidfVectorizer()
+vector.fit(x)
+x=vector.transform(x)
+# print(x)
+
+# --------------> Getting training and test samples aur baki sb bhi <----------------
+
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2,random_state=5)
+var=LogisticRegression()
+var.fit(x_train,y_train)
+x_new=x_test[1]
+
+print(var.score(x_train,y_train))
+
+
+# ------------------------> PROJECT ENDED <-------------------------
